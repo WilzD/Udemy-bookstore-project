@@ -14,6 +14,8 @@ router.get('/products/:productId', shopController.getProduct); //semicolon says 
 
 
 router.get('/cart', shopController.getCart);
+router.post('/cart', shopController.postCart);
+
 
 router.get('/orders', shopController.getOrders);
 

@@ -8,46 +8,59 @@ exports.getAddProduct = (req, res, next) => {
   });
 };
 
+//promise used in adding product on add product page
 exports.postAddProduct = (req, res, next) => {
   const title = req.body.title;
   const imageUrl = req.body.imageUrl;
   const price = req.body.price;
   const description = req.body.description;
   const product = new Product(null,title, imageUrl, description, price);
-  product.save();
-  res.redirect('/');
+  product.save().then(()=>{
+    res.redirect('/');
+  }).catch(err=>console.log(err));
 };
 
-exports.getProducts = (req, res, next) => {
-  Product.fetchAll(products => {
-    res.render('admin/products', {
-      prods: products,
-      pageTitle: 'Admin Products',
-      path: '/admin/products'
-    });
-  });
-};
+//promise used in showing products on admin products page
+exports.getProducts = (req, res, next) =>{
+  Product.fetchAll().then(([products])=>{
+      res.render('admin/products',{
+        prods: products,
+        pageTitle: 'Admin Products',
+         path: '/admin/products',
+      })
+  }).catch(err=>console.log(err))
+}
 
+// promise used in delete product on admin product page 
+exports.deleteProduct=(req,res,next)=>{
+  const prodId=req.params.productId
+  Product.delete(prodId).then(()=>{
+    res.redirect('/admin/products')
+  })
+}
+
+//promise used on edit button on admin products page
 exports.getEditProduct = (req, res, next) => {
   const editMode=req.query.edit;
   if(!editMode){
     return res.redirect('/')
   }
   const prodId=req.params.productId
-  Product.findById(prodId,product=>{
+  Product.findById(prodId).then(([product])=>{
     if(!product){
       return res.redirect('/')
     }
-    res.render('admin/edit-product', {
-      pageTitle: 'Edit Product',
-      path: '/admin/edit-product',
-      editing:editMode,
-      product:product
-    });
-  })
-
+    else{
+      res.render('admin/edit-product', {
+        pageTitle: 'Edit Product',
+        path: '/admin/edit-product',
+        editing:editMode,
+        product:product[0]
+      });
+    }
+  }).catch(err=>console.log(err))
 };
-
+//using promise to update product on admin page
 exports.postEditProduct = (req, res, next) => {
   const prodId=req.body.productId
 
@@ -56,25 +69,19 @@ exports.postEditProduct = (req, res, next) => {
   const updatedDesc=req.body.description
   const updatedImgUrl=req.body.imageUrl
 
-  const updatedProduct=new Product(
+  const updatedProduct={
     prodId,
     updatedTitle,
     updatedImgUrl,
     updatedDesc,
     updatedPrice,
-    
-  )
-  // console.log(updatedProduct)
-  updatedProduct.save()
-  res.redirect('/admin/products')
+  }
+  Product.update(updatedProduct).then(()=>{
+    res.redirect('/admin/products')
+  }).catch(err=>console.log(err))
 };
 
-exports.deleteProduct=(req,res,next)=>{
-  const prodId=req.params.productId
-  Product.delete(prodId)
-  
-  res.redirect('/admin/products')
-}
+
 
 exports.getCartItems=(req,res,next)=>{
 res.send('<h1>your cart</h1>')

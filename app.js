@@ -9,6 +9,9 @@ const sequelizeDB=require('./util/database') // importing the sequelize from our
 //importing our models to make relations beetween them
 const Product=require('./models/product')
 const User=require('./models/user')
+const Cart=require('./models/cart')
+const CartItem=require('./models/cart-item')
+
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
@@ -37,8 +40,15 @@ app.use(shopRoutes);
 //one to one relation 
 //belogsTo defining that one to one relation exist BW Product and User ,and FK being defined in Product table(right side)
 //if we use hasOne that also create one to one relation but the FK is being defined in User table(left side)
-Product.belongsTo(User,{constraints:true,onDelete:'CASCADE'}) //this product created by this user, also setting constraints onDelete:"CASCADE" that on delete of this user all products related to him will delete
-User.hasMany(Product) // this is one to many relation between creator and products,this is optional but for ensure we can also define that
+
+// Product.belongsTo(User)//this product created by this user, also setting constraints onDelete:"CASCADE" that on delete of this user all products related to him will delete
+User.hasMany(Product,{constraints:true,onDelete:'CASCADE'}) // this is one to many relation between creator and products,this is another way of doing one to one relation
+
+//user cart relation which is stored in UserItem table(because M-N relation always need a intermideate table)
+User.hasOne(Cart)  //this relation can also be written as Cart.belongsTo(user)
+Cart.belongsToMany(Product,{through:CartItem}) //many to many relation , through:CartItem is saying that where these relation going to be stored
+// Cart.belongsToMany(Product,{through:CartItem})// another way of witting above M-N relation
+
 
 //so the sync method ensure that all the tables and relations were made in database, and only after we are running the server
 //so we get new table every time the server is loaded?
@@ -54,9 +64,8 @@ sequelizeDB.sync()
     }else{
         return user
     }
-}).then(user=>{
-    // console.log(user)
-    app.listen(3000)
-})
+}).then((user)=>{
+    return user.createCart() //as soon as the new user logged a cart is created(this user id will add in cart table)
+}).then(app.listen(3000))
 .catch(err=>console.log(err))
 
